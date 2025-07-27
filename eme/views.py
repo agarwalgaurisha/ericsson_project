@@ -385,6 +385,16 @@ def request_om_approval(request, claim_id):
 @login_required
 @user_passes_test(lambda u: role_check(u, 'OM'))
 def om_dashboard(request):
+    
+    
+    claims = ClaimStatus.objects.filter(
+        approved_by_dm=True,
+        approved_by_om=False
+    )
+    
+    processed_claims = ClaimStatus.objects.filter(
+        approved_by_om=True
+    ).order_by('-updated_at')[:10]
     form = DashboardFilterForm(request.GET or None)
     if form.is_valid():
         year = form.cleaned_data.get('year')
@@ -401,19 +411,10 @@ def om_dashboard(request):
         if consumer_no:
             claims = claims.filter(consumer_no__icontains=consumer_no)
     
-    
-    claims = ClaimStatus.objects.filter(
-        approved_by_dm=True,
-        approved_by_om=False
-    )
-    
-    processed_claims = ClaimStatus.objects.filter(
-        approved_by_om=True
-    ).order_by('-updated_at')[:10]
-    
     return render(request, 'eme/om_dashboard.html', {
         'claims': claims,
-        'processed_claims': processed_claims
+        'processed_claims': processed_claims,
+        'form':form
     })
 
 @login_required
