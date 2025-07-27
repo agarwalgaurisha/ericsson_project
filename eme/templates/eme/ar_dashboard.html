@@ -1,0 +1,70 @@
+{% extends 'eme/base.html' %}
+
+{% block content %}
+<h2>AR Dashboard</h2>
+
+<div class="mb-3">
+    <a href="{% url 'upload_excel' %}" class="btn btn-primary">Upload Excel File</a>
+</div>
+
+<h4>All Claims</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Consumer No</th>
+            <th>Consumer Name</th>
+            <th>EME</th>
+            <th>Status</th>
+            <th>Current Handler</th>
+            <th>DM Approved</th>
+            <th>OM Approved</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for claim in claims %}
+        <tr>
+            <td>{{ claim.consumer_no }}</td>
+            <td>{{ claim.consumer_name }}</td>
+            <td>{{ claim.eme|default:"Not set" }}</td>
+            <td>
+                <span class="badge 
+                    {% if claim.status == 'ar_approved' %}bg-success
+                    {% elif claim.status == 'rejected' %}bg-danger
+                    {% elif claim.status == 'new' %}bg-secondary
+                    {% elif claim.status == 'dm_approved' %}bg-warning
+                    {% elif claim.status == 'om_approved' %}bg-info
+                    {% endif %}">
+                    {{ claim.get_status_display }}
+                </span>
+            </td>
+            <td>{{ claim.current_handler|default:"-" }}</td>
+            <td>{% if claim.approved_by_dm %}✅{% else %}❌{% endif %}</td>
+            <td>{% if claim.approved_by_om %}✅{% else %}❌{% endif %}</td>
+            <td>
+                {% if claim.status == 'new' %}
+                    <a href="{% url 'request_dm_review' claim.id %}" class="btn btn-sm btn-primary">Send to DM</a>
+                {% elif claim.status == 'dm_approved' %}
+                    <div class="btn-group">
+                        <a href="{% url 'ar_approve' claim.id %}" class="btn btn-sm btn-success">AR Approve</a>
+                        <a href="{% url 'request_om_approval' claim.id %}" class="btn btn-sm btn-warning">Send to OM</a>
+                    </div>
+                {% elif claim.status == 'om_approved' %}
+                    <a href="{% url 'final_approve' claim.id %}" class="btn btn-sm btn-success">Final Approve</a>
+                {% endif %}
+
+                {% if claim.justification_file %}
+                    <a href="{{ claim.justification_file.url }}" class="btn btn-sm btn-info" download>Download Justification</a>
+                {% endif %}
+
+                <a href="{% url 'view_claim_details' claim.id %}" class="btn btn-sm btn-secondary">Details</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8">No claims found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

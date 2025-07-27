@@ -1,0 +1,64 @@
+{% extends "eme/base.html" %}
+
+{% block title %}Claim Details - {{ claim.consumer_no }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h4>Claim Details - {{ claim.consumer_no }}</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Consumer No</th>
+                        <td>{{ claim.consumer_no }}</td>
+                    </tr>
+                    <tr>
+                        <th>Consumer Name</th>
+                        <td>{{ claim.consumer_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>EME Value</th>
+                        <td>{{ claim.eme|default:"Not set" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td>{{ claim.get_status_display }}</td>
+                    </tr>
+                    <tr>
+                        <th>Justification Text</th>
+                        <td>{{ claim.justification_text|default:"No justification provided" }}</td>
+                    </tr>
+                    <tr>
+                        <th>DM Approved</th>
+                        <td>{% if claim.approved_by_dm %}✅{% else %}❌{% endif %}</td>
+                    </tr>
+                     <tr>
+                        <th>OM Approved</th>
+                        <td>{% if claim.approved_by_om %}✅{% else %}❌{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th>AR Approved</th>
+                        <td>{% if claim.approved_by_ar %}✅{% else %}❌{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th>Justification File</th>
+                        <td>
+                            {% if claim.justification_file %}
+                                <a href="{{ claim.justification_file.url }}" class="btn btn-sm btn-info" download>
+                                    Download File
+                                </a>
+                            {% else %}
+                                No file uploaded
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                <a href="{% url 'ar_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

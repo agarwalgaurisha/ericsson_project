@@ -1,0 +1,43 @@
+{% extends "eme/base.html" %}
+
+{% block title %}AR Approval - {{ claim.consumer_no }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4>AR Approval - {{ claim.consumer_no }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h5>Claim Details</h5>
+                    <p><strong>Consumer:</strong> {{ claim.consumer_name }} ({{ claim.consumer_no }})</p>
+                    <p><strong>EME Value:</strong> {{ claim.eme|default:"Not set" }}</p>
+                    <p><strong>DM Approval:</strong> {% if claim.approved_by_dm %}✅{% else %}❌{% endif %}</p>
+                    <p><strong>OM Approval:</strong> {% if claim.approved_by_om %}✅{% else %}❌{% endif %}</p>
+                    
+                    {% if claim.justification_text %}
+                        <div class="mt-3">
+                            <h6>Justification:</h6>
+                            <p>{{ claim.justification_text }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i> Confirm AR Approval
+                        </button>
+                        <a href="{% url 'ar_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

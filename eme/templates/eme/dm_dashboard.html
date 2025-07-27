@@ -1,0 +1,50 @@
+{% extends "eme/base.html" %}
+
+{% block title %}DM Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>DM Dashboard</h2>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Pending Approvals</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Consumer No</th>
+                            <th>Consumer Name</th>
+                            <th>Current EME</th>
+                            <th>Requested By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <tr>
+                            <td>{{ claim.consumer_no }}</td>
+                            <td>{{ claim.consumer_name }}</td>
+                            <td>{{ claim.eme|default:"Not set" }}</td>
+                            <td>{{ claim.created_by.get_full_name|default:claim.created_by.username }}</td>
+                            <td>
+                                <a href="{% url 'dm_approve' claim.id %}" 
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-edit"></i> Review
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">No claims pending your approval</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

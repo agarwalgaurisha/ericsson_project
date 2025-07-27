@@ -1,0 +1,41 @@
+{% extends "eme/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Review Claim</h2>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Claim Details</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Consumer No:</strong> {{ claim.consumer_no }}</p>
+            <p><strong>Consumer Name:</strong> {{ claim.consumer_name }}</p>
+            <p><strong>Current EME:</strong> {{ claim.eme|default:"Not set" }}</p>
+            {% if claim.justification_text %}
+                <p><strong>Justification:</strong> {{ claim.justification_text }}</p>
+            {% endif %}
+            {% if claim.justification_file %}
+                <p><strong>Attachment:</strong> <a href="{{ claim.justification_file.url }}" target="_blank">View File</a></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.approve.label_tag }}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="approve" id="id_approve">
+                <label class="form-check-label" for="id_approve">Approve this claim</label>
+            </div>
+        </div>
+        <div class="mb-3">
+            {{ form.comments.label_tag }}
+            {{ form.comments }}
+            <small class="form-text text-muted">Provide any additional comments (optional)</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Decision</button>
+        <a href="{% url 'dm_dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

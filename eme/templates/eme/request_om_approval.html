@@ -1,0 +1,36 @@
+{% extends "eme/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Request OM Approval</h2>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Claim Details</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Consumer No:</strong> {{ claim.consumer_no }}</p>
+            <p><strong>Consumer Name:</strong> {{ claim.consumer_name }}</p>
+            <p><strong>EME Value:</strong> {{ claim.eme }}</p>
+            {% if claim.justification_text %}
+            <p><strong>Justification:</strong> {{ claim.justification_text }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.message.label_tag }}
+            {{ form.message }}
+            <small class="form-text text-muted">Add any additional comments for the OM</small>
+        </div>
+        <div class="mb-3">
+            {{ form.attachment.label_tag }}
+            {{ form.attachment }}
+            <small class="form-text text-muted">Optional: Attach supporting documents</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Send Request</button>
+        <a href="{% url 'dm_dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

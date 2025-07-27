@@ -1,0 +1,74 @@
+{# templates/eme/om_dashboard.html #}
+{% extends 'eme/base.html' %}
+
+{% block content %}
+<h2>OM Dashboard</h2>
+
+<h4>Claims Pending OM Approval</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Consumer No</th>
+            <th>Consumer Name</th>
+            <th>Proposed EME</th>
+            <th>DM</th>
+            <th>DM Approval Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for claim in claims %}
+        <tr>
+            <td>{{ claim.consumer_no }}</td>
+            <td>{{ claim.consumer_name }}</td>
+            <td>{{ claim.eme }}</td>
+            <td>{{ claim.submitted_by.get_full_name|default:claim.submitted_by.username }}</td>
+            <td>{{ claim.updated_at|date:"Y-m-d H:i" }}</td>
+            <td>
+                <a href="{% url 'om_approve' claim.id %}" class="btn btn-sm btn-success">Review/Approve</a>
+                <a href="{% url 'view_justification' claim.id %}" class="btn btn-sm btn-info">View Justification</a>
+                <a href="{% url 'view_communications' claim.id %}" class="btn btn-sm btn-secondary">Communications</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">No claims pending your approval.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4 class="mt-4">Recently Processed Claims</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Consumer No</th>
+            <th>Consumer Name</th>
+            <th>EME</th>
+            <th>Decision</th>
+            <th>Decision Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for claim in processed_claims %}
+        <tr>
+            <td>{{ claim.consumer_no }}</td>
+            <td>{{ claim.consumer_name }}</td>
+            <td>{{ claim.eme }}</td>
+            <td>
+                {% if claim.approved_by_om %}
+                <span class="badge bg-success">Approved</span>
+                {% else %}
+                <span class="badge bg-danger">Rejected</span>
+                {% endif %}
+            </td>
+            <td>{{ claim.updated_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No processed claims yet.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
