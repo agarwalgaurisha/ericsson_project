@@ -7,9 +7,11 @@
     <div class="col-md-12">
         <h2>DM Dashboard</h2>
         
-        <div class="card">
-            <div class="card-header">
-                <h5>Pending Approvals</h5>
+        <!-- Section 1: Pending Approvals (Editable) -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-clock"></i> Pending Approvals - Can Edit ({{ pending_claims.count }})</h5>
+                <small>These records are awaiting your review or have been approved by you but not yet finalized by AR.</small>
             </div>
             <div class="card-body">
                 <table class="table table-striped">
@@ -18,33 +20,201 @@
                             <th>Consumer No</th>
                             <th>Consumer Name</th>
                             <th>Current EME</th>
+                            <th>Status</th>
+                            <th>DM Approved</th>
+                            <th>OM Approved</th>
+                            <th>Submitted At</th>
                             <th>Requested By</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for claim in claims %}
+                        {% for claim in pending_claims %}
                         <tr>
                             <td>{{ claim.consumer_no }}</td>
                             <td>{{ claim.consumer_name }}</td>
                             <td>{{ claim.eme|default:"Not set" }}</td>
+                            <td>
+                                {% if claim.status == 'dm_review' %}
+                                    <span class="badge bg-warning">Pending DM Review</span>
+                                {% elif claim.status == 'dm_approved' %}
+                                    <span class="badge bg-info">DM Approved</span>
+                                {% elif claim.status == 'om_review' %}
+                                    <span class="badge bg-primary">OM Review</span>
+                                {% elif claim.status == 'om_approved' %}
+                                    <span class="badge bg-success">OM Approved - Awaiting AR</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ claim.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if claim.approved_by_dm %}
+                                    <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                {% else %}
+                                    <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if claim.approved_by_om %}
+                                    <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                {% else %}
+                                    <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ claim.created_at|date:"M d, Y H:i" }}</td>
                             <td>{{ claim.submitted_by.get_full_name|default:claim.submitted_by.username }}</td>
                             <td>
-                                <a href="{% url 'dm_approve' claim.id %}" 
-                                   class="btn btn-sm btn-primary">
-                                    <i class="fas fa-edit"></i> Review
-                                </a>
+                                <!-- DM can edit these records until AR approves -->
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'dm_approve_record' claim.id %}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> 
+                                        {% if claim.approved_by_dm %}Re-Edit{% else %}Edit & Approve{% endif %}
+                                    </a>
+                                    <a href="{% url 'view_claim_details' claim.id %}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> Details
+                                    </a>
+                                    {% if claim.approved_by_dm and not claim.approved_by_om %}
+                                        <a href="{% url 'request_om_approval' claim.id %}" 
+                                           class="btn btn-sm btn-warning">
+                                            <i class="fas fa-paper-plane"></i> Send to OM
+                                        </a>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5">No claims pending your approval</td>
+                            <td colspan="9" class="text-center text-muted">
+                                <i class="fas fa-inbox"></i> No claims pending your approval
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Section 2: Finalized Records (Read-only) -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-check-double"></i> Finalized Records - Read Only ({{ finalized_claims.count }})</h5>
+                <small>These records have been finally approved by AR and cannot be edited.</small>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Consumer No</th>
+                            <th>Consumer Name</th>
+                            <th>Final EME</th>
+                            <th>Status</th>
+                            <th>DM Approved</th>
+                            <th>OM Approved</th>
+                            <th>AR Approved</th>
+                            <th>Finalized At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in finalized_claims %}
+                        <tr class="table-success">
+                            <td>{{ claim.consumer_no }}</td>
+                            <td>{{ claim.consumer_name }}</td>
+                            <td><strong>{{ claim.eme|default:"Not set" }}</strong></td>
+                            <td>
+                                <span class="badge bg-success">AR Approved</span>
+                            </td>
+                            <td><span class="text-success"><i class="fas fa-check-circle"></i> Yes</span></td>
+                            <td><span class="text-success"><i class="fas fa-check-circle"></i> Yes</span></td>
+                            <td><span class="text-success"><i class="fas fa-check-circle"></i> Yes</span></td>
+                            <td>{{ claim.updated_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <!-- Read-only actions -->
+                                <a href="{% url 'view_claim_details' claim.id %}" 
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                                {% if claim.justification_file %}
+                                    <a href="{{ claim.justification_file.url }}" 
+                                       class="btn btn-sm btn-outline-secondary" 
+                                       download>
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">
+                                <i class="fas fa-clipboard-list"></i> No finalized records yet
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 3: Completed Records (Moved to EMEFinal) -->
+        {% if completed_records %}
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5><i class="fas fa-archive"></i> Completed Records (Archived)</h5>
+                <small>These records have been moved to the final archive.</small>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Consumer No</th>
+                            <th>Consumer Name</th>
+                            <th>Final EME</th>
+                            <th>Approved By</th>
+                            <th>Completed At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in completed_records %}
+                        <tr class="table-dark">
+                            <td>{{ record.consumer_no }}</td>
+                            <td>{{ record.consumer_name }}</td>
+                            <td><strong>{{ record.eme }}</strong></td>
+                            <td>{{ record.approved_by.get_full_name|default:record.approved_by.username }}</td>
+                            <td>{{ record.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if record.justification_file %}
+                                    <a href="{{ record.justification_file.url }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       download>
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<style>
+.card-header {
+    font-weight: bold;
+}
+.btn-group .btn {
+    margin-right: 2px;
+}
+.table-success {
+    background-color: #d4edda !important;
+}
+.table-dark {
+    background-color: #f8f9fa !important;
+}
+</style>
 {% endblock %}

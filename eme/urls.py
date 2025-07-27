@@ -17,7 +17,7 @@ urlpatterns = [
     path('dm/edit/<int:claim_id>/', views.edit_claim, name='edit_claim'),
 
     path('dm/approve/<int:claim_id>/', views.dm_approve_record, name='dm_approve'),
-    
+     path('dm/approve-record/<int:claim_id>/', views.dm_approve_record, name='dm_approve_record'),  # Add this line
     path('dm/', views.dm_dashboard, name='dm_dashboard'),
 
     # OM URLs

@@ -223,8 +223,9 @@ def final_approve(request, claim_id):
 def dm_dashboard(request):
     
     pending_claims = ClaimStatus.objects.filter(
-        approved_by_dm=False,
-        status='dm_review',
+    
+       approved_by_ar=False,
+        status__in=['dm_review', 'dm_approved','om_review', 'om_approved'],
 
         
     ).order_by('-created_at')
@@ -233,9 +234,16 @@ def dm_dashboard(request):
         approved_by_dm=True,
         
     ).order_by('-updated_at')[:10]
+
+    finalized_claims = ClaimStatus.objects.filter(
+        approved_by_ar=True  # Finally approved by AR
+    ).order_by('-updated_at')
+    completed_records = EMEFinal.objects.all().order_by('-created_at')[:10]
     
     return render(request, 'eme/dm_dashboard.html', {
         'pending_claims': pending_claims,
+         'finalized_claims': finalized_claims,
+        'completed_records': completed_records,
         'approved_claims': approved_claims,
         'claims': pending_claims 
     })
@@ -420,15 +428,25 @@ def view_claim_details(request, claim_id):
 @user_passes_test(lambda u: u.role == 'DM')
 def dm_approve_record(request, claim_id):
     claim = get_object_or_404(ClaimStatus, id=claim_id)
-    
+    if claim.approved_by_ar:
+        messages.warning(request, 'This claim has been finally approved by AR and cannot be edited.')
+        return redirect('dm_dashboard')
     if request.method == 'POST':
         form = DMApprovalForm(request.POST, request.FILES, instance=claim)
         if form.is_valid():
             claim = form.save(commit=False)
             claim.approved_by_dm = True
             claim.status = 'dm_approved'  # If you have status field
-            claim.save()
+            # Update status based on current workflow state
+            if claim.approved_by_om:
+                # If OM has already approved, status should reflect that
+                claim.status = 'om_approved'
+            else:
+                # DM just approved, waiting for OM or AR
+                claim.status = 'dm_approved'
             
+            claim.save()
+            action = "re-approved" if claim.approved_by_dm else "approved"
             messages.success(request, 'Record updated and approved by DM.')
             return redirect('dm_dashboard')
     else:
@@ -436,5 +454,6 @@ def dm_approve_record(request, claim_id):
     
     return render(request, 'eme/dm_approve.html', {
         'form': form,
-        'claim': claim
+        'claim': claim,
+        'title': 'Edit & Approve Record' if not claim.approved_by_dm else 'Re-Edit Record'
     })
