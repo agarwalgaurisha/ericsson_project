@@ -1,17 +1,61 @@
+
 {% extends "eme/base.html" %}
-
+{% load crispy_forms_tags %}
 {% block title %}DM Dashboard{% endblock %}
-
 {% block content %}
 <div class="row">
     <div class="col-md-12">
         <h2>DM Dashboard</h2>
-        
+        <!-- Filter Form -->
+    <!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="form-inline">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label>Apply To:</label>
+                        <select name="filter_target" class="form-select">
+                            <option value="pending" {% if filter_target == 'pending' %}selected{% endif %}>Pending Claims</option>
+                            <option value="approved" {% if filter_target == 'approved' %}selected{% endif %}>Approved Claims</option>
+                            <option value="finalized" {% if filter_target == 'finalized' %}selected{% endif %}>Finalized Claims</option>
+                            <option value="all" {% if filter_target == 'all' %}selected{% endif %}>All Claims</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    {{ form.year|as_crispy_field }}
+                </div>
+                <div class="col-md-2">
+                    {{ form.month|as_crispy_field }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.consumer_name|as_crispy_field }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.consumer_no|as_crispy_field }}
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{% url 'dm_dashboard' %}" class="btn btn-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+    </div>
         <!-- Section 1: Pending Approvals (Editable) -->
         <div class="card mb-4">
             <div class="card-header bg-warning text-dark">
                 <h5><i class="fas fa-clock"></i> Pending Approvals - Can Edit ({{ pending_claims.count }})</h5>
-                <small>These records are awaiting your review or have been approved by you but not yet finalized by AR.</small>
+                <small>These records are awaiting your review or have been approved by you but not yet finalized by AR.
+                    {% if filter_target == 'pending' or filter_target == 'all' and filter_applied %}
+            <span class="badge bg-info">Filters Applied</span>
+            {% endif %}
+                </small>
             </div>
             <div class="card-body">
                 <table class="table table-striped">
@@ -100,7 +144,11 @@
         <div class="card mb-4">
             <div class="card-header bg-success text-white">
                 <h5><i class="fas fa-check-double"></i> Finalized Records - Read Only ({{ finalized_claims.count }})</h5>
-                <small>These records have been finally approved by AR and cannot be edited.</small>
+                <small>These records have been finally approved by AR and cannot be edited.
+                     {% if filter_target == 'finalized' or filter_target == 'all' and filter_applied %}
+            <span class="badge bg-info">Filters Applied</span>
+            {% endif %}
+                </small>
             </div>
             <div class="card-body">
                 <table class="table table-striped">

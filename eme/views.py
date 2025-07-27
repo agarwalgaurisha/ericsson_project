@@ -9,7 +9,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.http import HttpResponse, FileResponse
 from .models import ClaimStatus, EMEFinal, User, CommunicationLog
-from .forms import ExcelUploadForm, ClaimStatusForm, ApprovalForm, CommunicationForm, DMApprovalForm
+from .forms import DashboardFilterForm, ExcelUploadForm, ClaimStatusForm, ApprovalForm, CommunicationForm, DMApprovalForm
+from django.db.models import Q
 
 
 def role_check(user, role):
@@ -45,10 +46,31 @@ def home(request):
 @login_required
 @user_passes_test(lambda u: role_check(u, 'AR'))
 def ar_dashboard(request):
+    form = DashboardFilterForm(request.GET or None)
+
+    
     claims = ClaimStatus.objects.all()
+    if form.is_valid():
+        year = form.cleaned_data.get('year')
+        month = form.cleaned_data.get('month')
+        consumer_name = form.cleaned_data.get('consumer_name')
+        consumer_no = form.cleaned_data.get('consumer_no')
+        
+        if year:
+            claims = claims.filter(created_at__year=year)
+        if month:
+            claims = claims.filter(created_at__month=month)
+        if consumer_name:
+            claims = claims.filter(consumer_name__icontains=consumer_name)
+        if consumer_no:
+            claims = claims.filter(consumer_no__icontains=consumer_no)
+    
+    
+
     final_approvals = EMEFinal.objects.all()
     return render(request, 'eme/ar_dashboard.html', {
         'claims': claims,
+        'form': form,
         'final_approvals': final_approvals
     })
 
@@ -222,6 +244,9 @@ def final_approve(request, claim_id):
 @user_passes_test(lambda u: role_check(u, 'DM'))
 def dm_dashboard(request):
     
+    
+    
+    filter_target = request.GET.get('filter_target', 'pending')
     pending_claims = ClaimStatus.objects.filter(
     
        approved_by_ar=False,
@@ -233,19 +258,57 @@ def dm_dashboard(request):
     approved_claims = ClaimStatus.objects.filter(
         approved_by_dm=True,
         
-    ).order_by('-updated_at')[:10]
+    ).order_by('-updated_at')
 
     finalized_claims = ClaimStatus.objects.filter(
         approved_by_ar=True  # Finally approved by AR
     ).order_by('-updated_at')
     completed_records = EMEFinal.objects.all().order_by('-created_at')[:10]
+    form = DashboardFilterForm(request.GET or None)
+    
+    if form.is_valid():
+        year = form.cleaned_data.get('year')
+        month = form.cleaned_data.get('month')
+        consumer_name = form.cleaned_data.get('consumer_name')
+        consumer_no = form.cleaned_data.get('consumer_no')
+        
+        # Apply filters to the selected target
+        if filter_target == 'pending':
+            queryset = pending_claims
+        elif filter_target == 'approved':
+            queryset = approved_claims
+        elif filter_target == 'finalized':
+            queryset = finalized_claims
+        else:
+            queryset = pending_claims  # default
+        if year:
+            queryset = queryset.filter(created_at__year=year)
+        if month:
+            queryset = queryset.filter(created_at__month=month)
+        if consumer_name:
+            queryset = queryset.filter(consumer_name__icontains=consumer_name)
+        if consumer_no:
+            queryset = queryset.filter(consumer_no__icontains=consumer_no)
+            
+        # Update the original queryset
+        if filter_target == 'pending':
+            pending_claims = queryset
+        elif filter_target == 'approved':
+            approved_claims = queryset
+        elif filter_target == 'finalized':
+            finalized_claims = queryset
+    approved_claims = approved_claims[:10]
+    finalized_claims = finalized_claims[:10]  # Add if you want to limit these too
     
     return render(request, 'eme/dm_dashboard.html', {
         'pending_claims': pending_claims,
+        'form': form,
          'finalized_claims': finalized_claims,
         'completed_records': completed_records,
         'approved_claims': approved_claims,
-        'claims': pending_claims 
+        'claims': pending_claims ,
+        'filter_target': filter_target,
+    'filter_applied': any([form.cleaned_data.get(field) for field in ['year', 'month', 'consumer_name', 'consumer_no']])
     })
 
 @login_required
@@ -322,6 +385,23 @@ def request_om_approval(request, claim_id):
 @login_required
 @user_passes_test(lambda u: role_check(u, 'OM'))
 def om_dashboard(request):
+    form = DashboardFilterForm(request.GET or None)
+    if form.is_valid():
+        year = form.cleaned_data.get('year')
+        month = form.cleaned_data.get('month')
+        consumer_name = form.cleaned_data.get('consumer_name')
+        consumer_no = form.cleaned_data.get('consumer_no')
+        
+        if year:
+            claims = claims.filter(created_at__year=year)
+        if month:
+            claims = claims.filter(created_at__month=month)
+        if consumer_name:
+            claims = claims.filter(consumer_name__icontains=consumer_name)
+        if consumer_no:
+            claims = claims.filter(consumer_no__icontains=consumer_no)
+    
+    
     claims = ClaimStatus.objects.filter(
         approved_by_dm=True,
         approved_by_om=False

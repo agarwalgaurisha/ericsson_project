@@ -1,7 +1,22 @@
 from django import forms
 from .models import ClaimStatus, CommunicationLog
 from django.core.validators import FileExtensionValidator
+from django.db.models.functions import ExtractYear, ExtractMonth
 
+
+class DashboardFilterForm(forms.Form):
+    YEAR_CHOICES = [(None, 'All Years')] + [(year, year) for year in 
+                   ClaimStatus.objects.annotate(year=ExtractYear('created_at'))
+                   .values_list('year', flat=True).distinct().order_by('-year')]
+    
+    MONTH_CHOICES = [(None, 'All Months')] + [(i, month) for i, month in 
+                    enumerate(['January', 'February', 'March', 'April', 'May', 'June',
+                             'July', 'August', 'September', 'October', 'November', 'December'], 1)]
+    
+    year = forms.ChoiceField(choices=YEAR_CHOICES, required=False)
+    month = forms.ChoiceField(choices=MONTH_CHOICES, required=False)
+    consumer_name = forms.CharField(required=False)
+    consumer_no = forms.CharField(required=False)
 
 class JustificationForm(forms.ModelForm):
     class Meta:
