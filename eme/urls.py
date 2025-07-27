@@ -8,15 +8,17 @@ urlpatterns = [
     path('ar/', views.ar_dashboard, name='ar_dashboard'),
     path('ar/upload/', views.upload_excel, name='upload_excel'),
     path('ar/request-review/<int:claim_id>/', views.request_dm_review, name='request_dm_review'),
+    
     path('ar/final-approve/<int:claim_id>/', views.final_approve, name='final_approve'),
     path('ar/approve/<int:claim_id>/', views.ar_approve, name='ar_approve'),
     
     # DM URLs
     path('dm/', views.dm_dashboard, name='dm_dashboard'),
     path('dm/edit/<int:claim_id>/', views.edit_claim, name='edit_claim'),
-    path('dm/approve/<int:claim_id>/', views.dm_approve, name='dm_approve'),
-    path('dm/approve/<int:claim_id>/', views.dm_approve_record, name='dm_approve'),
 
+    path('dm/approve/<int:claim_id>/', views.dm_approve_record, name='dm_approve'),
+    
+    path('dm/', views.dm_dashboard, name='dm_dashboard'),
 
     # OM URLs
     path('om/', views.om_dashboard, name='om_dashboard'),

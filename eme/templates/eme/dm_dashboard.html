@@ -28,7 +28,7 @@
                             <td>{{ claim.consumer_no }}</td>
                             <td>{{ claim.consumer_name }}</td>
                             <td>{{ claim.eme|default:"Not set" }}</td>
-                            <td>{{ claim.created_by.get_full_name|default:claim.created_by.username }}</td>
+                            <td>{{ claim.submitted_by.get_full_name|default:claim.submitted_by.username }}</td>
                             <td>
                                 <a href="{% url 'dm_approve' claim.id %}" 
                                    class="btn btn-sm btn-primary">

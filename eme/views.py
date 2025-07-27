@@ -9,7 +9,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.http import HttpResponse, FileResponse
 from .models import ClaimStatus, EMEFinal, User, CommunicationLog
-from .forms import ExcelUploadForm, ClaimStatusForm, ApprovalForm, CommunicationForm
+from .forms import ExcelUploadForm, ClaimStatusForm, ApprovalForm, CommunicationForm, DMApprovalForm
+
 
 def role_check(user, role):
     return user.role == role
@@ -136,13 +137,18 @@ def request_dm_review(request, claim_id):
     if not dms.exists():
         messages.error(request, "No DM users found in the system")
         return redirect('ar_dashboard')
+    # Prevent resending already sent claims
+    if claim.status != 'new':  # Assuming 'new' is initial status
+        messages.warning(request, "Claim already sent for review")
+        return redirect('ar_dashboard')
     
     if request.method == 'POST':
         form = CommunicationForm(request.POST, request.FILES)
         if form.is_valid():
             # Update claim status
             claim.status = 'dm_review'
-            claim.current_handler = dms.first()  # or assign to specific DM
+            claim.current_handler = dms.first() 
+            # or assign to specific DM
             claim.save()
             
             # Create communication log for each DM
@@ -215,19 +221,23 @@ def final_approve(request, claim_id):
 @login_required
 @user_passes_test(lambda u: role_check(u, 'DM'))
 def dm_dashboard(request):
+    
     pending_claims = ClaimStatus.objects.filter(
         approved_by_dm=False,
-        current_handler=request.user
-    )
+        status='dm_review',
+
+        
+    ).order_by('-created_at')
     
     approved_claims = ClaimStatus.objects.filter(
         approved_by_dm=True,
-        submitted_by=request.user
+        
     ).order_by('-updated_at')[:10]
     
     return render(request, 'eme/dm_dashboard.html', {
         'pending_claims': pending_claims,
-        'approved_claims': approved_claims
+        'approved_claims': approved_claims,
+        'claims': pending_claims 
     })
 
 @login_required

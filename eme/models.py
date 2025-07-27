@@ -48,6 +48,7 @@ class ClaimStatus(models.Model):
         ('ar_approved', 'AR Approved'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
+        ('completed', 'Completed'),
     )
     def get_absolute_url(self):
         return reverse('view_claim', args=[str(self.id)])
@@ -59,16 +60,22 @@ class ClaimStatus(models.Model):
         return "No justification text"
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     current_handler = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_claims')
-    
     def save(self, *args, **kwargs):
-        # Update status based on approvals
-        if self.approved_by_ar:
-            self.status = 'ar_approved'
-        elif self.approved_by_om:
-            self.status = 'om_approved'
-        elif self.approved_by_dm:
-            self.status = 'dm_approved'
-        super().save(*args, **kwargs)
+    # Update status based on approvals - MODIFIED VERSION
+       if self.is_fully_approved():
+        self.status = 'approved'
+       elif self.approved_by_ar:
+        self.status = 'ar_approved'
+       elif self.approved_by_om:
+        self.status = 'om_approved'
+       elif self.approved_by_dm:
+        self.status = 'dm_approved'
+    # Don't automatically set status to 'new' here
+    
+       super().save(*args, **kwargs)  # This MUST be at the end
+    
+    
+    
     def is_fully_approved(self):
         return self.approved_by_dm and self.approved_by_om and self.approved_by_ar
     
@@ -97,3 +104,4 @@ class CommunicationLog(models.Model):
     
     def __str__(self):
         return f"Communication for {self.claim} at {self.timestamp}"
+    
