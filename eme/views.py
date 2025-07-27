@@ -265,7 +265,8 @@ def dm_dashboard(request):
     ).order_by('-updated_at')
     completed_records = EMEFinal.objects.all().order_by('-created_at')[:10]
     form = DashboardFilterForm(request.GET or None)
-    
+    # Initialize filter_applied flag
+    filter_applied = False
     if form.is_valid():
         year = form.cleaned_data.get('year')
         month = form.cleaned_data.get('month')
@@ -308,7 +309,7 @@ def dm_dashboard(request):
         'approved_claims': approved_claims,
         'claims': pending_claims ,
         'filter_target': filter_target,
-    'filter_applied': any([form.cleaned_data.get(field) for field in ['year', 'month', 'consumer_name', 'consumer_no']])
+        'filter_applied': filter_applied
     })
 
 @login_required
